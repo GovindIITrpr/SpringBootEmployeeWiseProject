@@ -3,14 +3,13 @@ package com.employee.assignment.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.mail.SimpleMailMessage;
-// import org.springframework.mail.javamail.JavaMailSender;
 
 import com.employee.assignment.DaoLayer.EmployeeDao;
 import com.employee.assignment.Model.Employee;
@@ -24,15 +23,15 @@ public class EmployeeService {
     @Autowired
     EmployeeDao employeeDao;
 
-    // @Autowired
-    // JavaMailSender javaMailSender;
+    @Autowired
+    EmailService emailService;
 
     public ResponseEntity<String> addEmployee(@RequestBody Employee employee) {
         try {
             employeeDao.save(employee);
-            // String manager = employee.getReportsTo();
-            // String managerEmail = findEmailIdByEmployeeName(manager);
-            // sendEmailToLevel1Manager(managerEmail, employee);
+            String manager = employee.getReportsTo();
+            String managerEmail = findEmailIdByEmployeeName(manager);
+            sendEmailToLevel1Manager(managerEmail, employee);
             return new ResponseEntity<>("success", HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,26 +39,25 @@ public class EmployeeService {
         return new ResponseEntity<>("Not Unique Employee", HttpStatus.ALREADY_REPORTED);
     }
 
-    // private void sendEmailToLevel1Manager(String managerEmail, Employee employee)
-    // {
-    // SimpleMailMessage mailMessage = new SimpleMailMessage();
-    // mailMessage.setTo(managerEmail);
-    // mailMessage.setSubject("New Employee Addition");
-    // mailMessage.setText(employee.getEmployeeName() + " will now work under you.
-    // Mobile number is " +
-    // employee.getPhoneNumber() + " and email is " + employee.getEmail());
+    private void sendEmailToLevel1Manager(String managerEmail, Employee employee) {
+        String message = buildEmailContent(employee);
+        String subject = "New Employee is added";
+        emailService.sendSimpleEmail(managerEmail, subject, message);
+    }
 
-    // javaMailSender.send(mailMessage);
-    // }
+    private String buildEmailContent(Employee employee) {
+        return String.format("%s will now work under you. Mobile number is %s and email is %s",
+                employee.getEmployeeName(), employee.getPhoneNumber(), employee.getEmail());
+    }
 
-    // public String findEmailIdByEmployeeName(String employeeName) {
-    // Employee employee = employeeDao.findByEmployeeName(employeeName);
-    // if (employee != null) {
-    // return employee.getEmail();
-    // } else {
-    // return null;
-    // }
-    // }
+    public String findEmailIdByEmployeeName(String employeeName) {
+        Employee employee = employeeDao.findByEmployeeName(employeeName);
+        if (employee != null) {
+            return employee.getEmail();
+        } else {
+            return null;
+        }
+    }
 
     public ResponseEntity<List<Employee>> getAllEmployees() {
         try {

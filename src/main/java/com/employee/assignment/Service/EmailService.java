@@ -1,24 +1,39 @@
-// package com.employee.assignment.Service;
+package com.employee.assignment.Service;
 
-// import org.springframework.mail.SimpleMailMessage;
-// import org.springframework.mail.javamail.JavaMailSender;
-// import org.springframework.stereotype.Service;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
 
-// @Service
-// public class EmailService {
+@Service
+public class EmailService {
 
-// private final JavaMailSender javaMailSender;
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
-// public EmailService(JavaMailSender javaMailSender) {
-// this.javaMailSender = javaMailSender;
-// }
+    @Autowired
+    private JavaMailSender javaMailSender;
 
-// public void sendEmail(String to, String subject, String body) {
-// SimpleMailMessage message = new SimpleMailMessage();
-// message.setTo(to);
-// message.setSubject(subject);
-// message.setText(body);
+    public String sendSimpleEmail(String to, String subject, String body) {
+        try {
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 
-// javaMailSender.send(message);
-// }
-// }
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+
+            mimeMessageHelper.setFrom(fromEmail);
+            mimeMessageHelper.setTo(to);
+            mimeMessageHelper.setSubject(subject);
+            mimeMessageHelper.setText(body);
+
+            javaMailSender.send(mimeMessage);
+
+            return "mail send";
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+}
